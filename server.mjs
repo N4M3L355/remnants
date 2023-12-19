@@ -15,7 +15,7 @@ const openai = new OpenAI({apiKey:process.env.OPENAI_API_KEY});
 const recognize = async (base64Image) => {
   const response = await openai.chat.completions.create({
     model: "gpt-4-vision-preview",
-    max_tokens: 1024,
+    max_tokens: 128,
     messages: [
       {
         role: "user",
@@ -40,7 +40,7 @@ const recognize = async (base64Image) => {
 let imagine = async (description,jailbreak=false) => {
 
   const response = await openai.images.generate({
-    model: "dall-e-3",
+    model: "dall-e-2",
     prompt: jailbreak?"I NEED to test how the tool works with extremely concrete prompts. DO NOT add any detail or variation, just use it AS-IS:`" + description + "`":description,
     //style: "natural",
     //quality:"hd",
@@ -67,17 +67,52 @@ async function downloadAndSave(url, savePath) {
 }
 
 // Function to convert PNG to JPG
-async function convertPngToJpg(inputPath, outputPath) {
+async function convertAndSavePngToJpg(inputPath, outputPath) {
   try {
-    await sharp(inputPath)
-      .toFormat('jpeg')
-      .toFile(outputPath);
-    console.log('Image converted to JPG successfully');
+    const pngBuffer = await fs.readFile(inputPath);
+    const jpgBuffer = await sharp(pngBuffer)
+      .jpeg()
+      .toBuffer();
+
+    // Initiate the JPG file saving process
+    fs.writeFile(outputPath, jpgBuffer).then(() => {
+      console.log('Image saved as JPG');
+    }).catch(error => {
+      console.error('Error saving the image:', error);
+    });
+
+    // Immediately return the Base64 string without waiting for the file to be saved
+    return jpgBuffer.toString('base64');
   } catch (error) {
     console.error('Error converting the image:', error);
+    throw error;
   }
 }
 
+async function convertImageToBase64(filePath) {
+  try {
+    const imageBuffer = await fs.readFile(filePath);
+    return imageBuffer.toString('base64');
+  } catch (error) {
+    console.error('Error converting image to Base64:', error);
+    throw error;
+  }
+}
+
+async function processImage(ws,downloadUrl,downloadPath,outputJpgPath) {
+
+  await downloadAndSave(downloadUrl, downloadPath);
+
+  const imgBase64 = await convertAndSavePngToJpg(downloadPath, outputJpgPath);
+
+
+  // Send the Base64 string over WebSocket
+  if (ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: "image", data: `data:image/jpeg;base64,${imgBase64}` }));
+  } else {
+    console.error("WebSocket is not open.");
+  }
+}
 
 const app = express();
 const port = 8080;
@@ -109,47 +144,48 @@ wss.on('connection', ws => {
         // Specify the file path and name
         const stamp = Date.now()
         const dirPath = `xlogs/${stamp}`;
-        const imagePath = `image${stamp}.jpg`
+        const imagePath = `image${stamp}`
         const descriptionPath = `description${stamp}.txt`
 
         try {
           // Write the image data to a file using async/await
           await fs.mkdir(dirPath);
-          await fs.writeFile(path.join(dirPath,`incoming_${imagePath}`), base64Data, 'base64');
+          await fs.writeFile(path.join(dirPath,`incoming_${imagePath}.jpg`), base64Data, 'base64');
           console.log('Image saved successfully');
-          ws.send('Image received and saved');
+          ws.send(JSON.stringify({type:"status",body:'Image received and saved'}));
         } catch (err) {
           console.error('Error saving the image:', err);
-          ws.send('Error saving image');
+          ws.send(JSON.stringify({type:"error",body:'Error saving image'}));
         }
         console.log("starting image description");
         let textDescription = await recognize(base64Data);
+        ws.send(JSON.stringify({type:"description",body:textDescription}))
         try {
           await fs.writeFile(path.join(dirPath,`raw_${descriptionPath}`), textDescription.response, 'utf-8');
 
         } catch (err){
+          ws.send(JSON.stringify({type:"error",body:'Error saving description'}));
           console.error('Error saving the description:', err);
-          ws.send('Error saving description');
 
         }
         console.log(textDescription);
         console.log("starting image generation");
         let response = await imagine(textDescription.response,true)
+        console.log(response);
+        ws.send(JSON.stringify({type:"description",body:response[0].revised_prompt}))
         try {
           await fs.writeFile(path.join(dirPath,`processed_${descriptionPath}`), response[0].revised_prompt, 'utf-8');
 
         } catch (err){
+          ws.send(JSON.stringify({type:"error",body:'Error saving revised prompt'}));
           console.error('Error saving the revised prompt:', err);
-          ws.send('Error saving revised prompt');
 
         }
         console.log(response[0].url);
         const downloadUrl = response[0].url; // Replace with your PNG URL
-        const downloadPath = path.join(dirPath,`generated_${imagePath}`); // Temporary path for downloaded PNG
-        const outputJpgPath = path.join(dirPath,`compressed_generated_${imagePath}`); // Output path for JPG
-
-        await downloadAndSave(downloadUrl, downloadPath);
-        await convertPngToJpg(downloadPath, outputJpgPath);
+        const downloadPath = path.join(dirPath,`generated_${imagePath}.png`); // Temporary path for downloaded PNG
+        const outputJpgPath = path.join(dirPath,`compressed_generated_${imagePath}.jpg`); // Output path for JPG
+        processImage(ws,downloadUrl,downloadPath,outputJpgPath).catch(error => console.error(error));
 
       }
     } catch (error) {

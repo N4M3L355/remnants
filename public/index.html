@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>WebSocket Ping Pong</title>
+    <title>Remnants</title>
     <script>
       let ws;
 
@@ -12,9 +12,29 @@
         ws.onopen = () => {
           console.log('Connected to the server');
         };
-
-        ws.onmessage = (event) => {
-          console.log('Message from server:', event.data);
+        ws.onmessage = function(event) {
+          console.log(event);
+          const message = JSON.parse(event.data);
+          if (message.type === "image") {
+            const img = new Image();
+            img.src = message.data;
+            document.getElementById('step3').appendChild(img); // Append the image to the body or any other container
+          }
+          else if (message.type === "description"){
+            const textDiv = document.createElement('div');
+            textDiv.textContent = message.body.response;
+            document.getElementById('step2').appendChild(textDiv);
+            console.log(message)
+          }
+          else if (message.type === "status"){
+            const textDiv = document.createElement('div');
+            textDiv.textContent = message.body;
+            document.getElementById('step2').appendChild(textDiv);
+            console.log(message)
+          }
+          else {
+            console.log(message)
+          }
         };
 
         ws.onclose = () => {
@@ -30,30 +50,33 @@
     </script>
 </head>
 <body>
-<h1>WebSocket Ping-Pong Test</h1>
+<h1>Remnants</h1>
 <button onclick="sendPing()">Send Ping</button>
 
-<div id="container">
-    <video autoplay="true" id="video"></video>
-    <button id="btn"> Take Picture </button>
-    <input type="file" id="fileInput" accept="image/jpeg">
-    <button id="uploadButton">Upload Image</button>
-    <canvas id="canvas" class="hidden"></canvas>
-    <img src="" alt="" id="img">
-    <a id="dl-btn" href="#" download="image.png" class="hidden"></a>
+<div id="step1" class="step">
+    <div id="container">
+        <video autoplay="true" id="video"></video>
+        <button id="btn"> Take Picture </button>
+        <input type="file" id="fileInput" accept="image/jpeg">
+        <button id="uploadButton">Upload Image</button>
+        <canvas id="canvas" class="hidden"></canvas>
+        <img src="" alt="" id="img">
+        <a id="dl-btn" href="#" download="image.png" class="hidden"></a>
+    </div>
+</div>
+<div id="step2" class="step">
+
+</div>
+<div id="step3" class="step">
 </div>
 </body>
 <style>
     #container {
-        margin: 0px auto;
-        width: 500px;
-        height: 375px;
     }
     #video {
         width: 500px;
         height: 375px;
         background-color: #666;
-        border-radius: 15px;
     }
 
     .hidden{
@@ -62,7 +85,6 @@
 
     #btn{
         display: block;
-        margin: 15px auto;
         width: 150px;
         height: 50px;
         border-radius: 10px;
