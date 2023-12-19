@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Ping Pong</title>
+    <script>
+      let ws;
+
+      window.onload = () => {
+        ws = new WebSocket('ws://localhost:8080');
+
+        ws.onopen = () => {
+          console.log('Connected to the server');
+        };
+
+        ws.onmessage = (event) => {
+          console.log('Message from server:', event.data);
+        };
+
+        ws.onclose = () => {
+          console.log('Disconnected from the server');
+        };
+      };
+
+      function sendPing() {
+        if (ws) {
+          ws.send(JSON.stringify({type:"message",data:'Ping'}));
+        }
+      }
+    </script>
+</head>
+<body>
+<h1>WebSocket Ping-Pong Test</h1>
+<button onclick="sendPing()">Send Ping</button>
+
+<div id="container">
+    <video autoplay="true" id="video"></video>
+    <button id="btn"> Take Picture </button>
+    <input type="file" id="fileInput" accept="image/jpeg">
+    <button id="uploadButton">Upload Image</button>
+    <canvas id="canvas" class="hidden"></canvas>
+    <img src="" alt="" id="img">
+    <a id="dl-btn" href="#" download="image.png" class="hidden"></a>
+</div>
+</body>
+<style>
+    #container {
+        margin: 0px auto;
+        width: 500px;
+        height: 375px;
+    }
+    #video {
+        width: 500px;
+        height: 375px;
+        background-color: #666;
+        border-radius: 15px;
+    }
+
+    .hidden{
+        display: none;
+    }
+
+    #btn{
+        display: block;
+        margin: 15px auto;
+        width: 150px;
+        height: 50px;
+        border-radius: 10px;
+    }
+
+    #btn:hover{
+        cursor: pointer;
+    }
+</style>
+<script>
+  const video = document.querySelector('#video')
+  const btn = document.querySelector('#btn')
+  const canvas =  document.querySelector('#canvas')
+
+  if(navigator.mediaDevices.getUserMedia){
+    navigator.mediaDevices.getUserMedia({video: true })
+      .then(stream => {
+        video.srcObject = stream
+      })
+      .catch(error => {
+        console.log('An error occured while accessing webcam.')
+      })
+  }
+
+  function resizeImage(source,width,height, maxDimension, quality) {
+    const IMG_DIMENSION_MAX =maxDimension// Math.min(maxDimension,Math.max(width,height));
+    const sourceAspect = width / height;
+    let targetWidth, targetHeight;
+
+    if (width > height) {
+      targetWidth = IMG_DIMENSION_MAX;
+      targetHeight = Math.round(IMG_DIMENSION_MAX / sourceAspect);
+    } else {
+      targetWidth = Math.round(IMG_DIMENSION_MAX * sourceAspect);
+      targetHeight = IMG_DIMENSION_MAX;
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    const context = canvas.getContext('2d');
+    context.drawImage(source, 0, 0, targetWidth, targetHeight);
+
+    return canvas.toDataURL('image/jpeg', quality);
+  }
+
+  btn.addEventListener('click', () => {
+// Use the resizeImage function for video
+    const imgBase64 = resizeImage(video,video.videoWidth,video.videoHeight, 512, 0.9);
+
+// Send the Base64 string over the WebSocket connection
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "image", data: imgBase64 }));
+    } else {
+      console.error("WebSocket is not open.");
+    }
+/*
+    // Your existing code to handle the download button
+    document.querySelector('#dl-btn').href = imgBase64;
+    document.querySelector('#dl-btn').click();*/
+
+  })
+  document.getElementById('uploadButton').addEventListener('click', async () => {
+    const fileInput = document.getElementById('fileInput');
+
+    if (!fileInput.files.length) {
+      alert("Please select a file first!");
+      return;
+    }
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    const img = new Image();
+
+    reader.onloadend = function() {
+      img.src = reader.result;
+    };
+
+    img.onload = function() {
+      // Use the resizeImage function for uploaded image
+      const imgBase64 = resizeImage(img,img.width,img.height, 512, 0.9);
+
+      // Send the resized Base64 string over the WebSocket connection
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "image", data: imgBase64 }));
+      } else {
+        console.error("WebSocket is not open.");
+      }
+    };
+
+    reader.readAsDataURL(file);
+  });
+
+</script>
+</html>
