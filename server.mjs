@@ -109,13 +109,13 @@ wss.on('connection', ws => {
         // Specify the file path and name
         const stamp = Date.now()
         const dirPath = `xlogs/${stamp}`;
-        const imagePath = `/image${stamp}.jpg`
-        const descriptionPath = `/image${stamp}.txt`
+        const imagePath = `image${stamp}.jpg`
+        const descriptionPath = `description${stamp}.txt`
 
         try {
           // Write the image data to a file using async/await
           await fs.mkdir(dirPath);
-          await fs.writeFile(path.join(dirPath,imagePath), base64Data, 'base64');
+          await fs.writeFile(path.join(dirPath,`incoming_${imagePath}`), base64Data, 'base64');
           console.log('Image saved successfully');
           ws.send('Image received and saved');
         } catch (err) {
@@ -125,7 +125,7 @@ wss.on('connection', ws => {
         console.log("starting image description");
         let textDescription = await recognize(base64Data);
         try {
-          await fs.writeFile(path.join(dirPath,descriptionPath), textDescription.response, 'utf-8');
+          await fs.writeFile(path.join(dirPath,`raw_${descriptionPath}`), textDescription.response, 'utf-8');
 
         } catch (err){
           console.error('Error saving the description:', err);
@@ -136,7 +136,7 @@ wss.on('connection', ws => {
         console.log("starting image generation");
         let response = await imagine(textDescription.response,true)
         try {
-          await fs.writeFile(path.join(dirPath,descriptionPath)+"2", response[0].revised_prompt, 'utf-8');
+          await fs.writeFile(path.join(dirPath,`processed_${descriptionPath}`), response[0].revised_prompt, 'utf-8');
 
         } catch (err){
           console.error('Error saving the revised prompt:', err);
@@ -145,8 +145,8 @@ wss.on('connection', ws => {
         }
         console.log(response[0].url);
         const downloadUrl = response[0].url; // Replace with your PNG URL
-        const downloadPath = path.join(dirPath,imagePath); // Temporary path for downloaded PNG
-        const outputJpgPath = path.join(dirPath,imagePath+"3"); // Output path for JPG
+        const downloadPath = path.join(dirPath,`generated_${imagePath}`); // Temporary path for downloaded PNG
+        const outputJpgPath = path.join(dirPath,`compressed_generated_${imagePath}`); // Output path for JPG
 
         await downloadAndSave(downloadUrl, downloadPath);
         await convertPngToJpg(downloadPath, outputJpgPath);
