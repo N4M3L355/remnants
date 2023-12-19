@@ -50,13 +50,17 @@
     </script>
 </head>
 <body>
-<h1>Remnants</h1>
-<button onclick="sendPing()">Send Ping</button>
-
+<div class="step">
+    <h1>Remnants</h1>
+    <button style="display: none" onclick="sendPing()">Send Ping</button>
+</div>
 <div id="step1" class="step">
     <div id="container">
         <video autoplay="true" id="video"></video>
         <button id="btn"> Take Picture </button>
+    </div>
+    or
+    <div>
         <input type="file" id="fileInput" accept="image/jpeg">
         <button id="uploadButton">Upload Image</button>
         <canvas id="canvas" class="hidden"></canvas>
@@ -64,14 +68,19 @@
         <a id="dl-btn" href="#" download="image.png" class="hidden"></a>
     </div>
 </div>
+<hr>
 <div id="step2" class="step">
-
 </div>
+<hr>
 <div id="step3" class="step">
 </div>
 </body>
 <style>
     #container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
     }
     #video {
         width: 500px;
@@ -92,6 +101,12 @@
 
     #btn:hover{
         cursor: pointer;
+    }
+    .step{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
     }
 </style>
 <script>

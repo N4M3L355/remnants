@@ -15,7 +15,7 @@ const openai = new OpenAI({apiKey:process.env.OPENAI_API_KEY});
 const recognize = async (base64Image) => {
   const response = await openai.chat.completions.create({
     model: "gpt-4-vision-preview",
-    max_tokens: 128,
+    max_tokens: 1024,
     messages: [
       {
         role: "user",
@@ -40,7 +40,7 @@ const recognize = async (base64Image) => {
 let imagine = async (description,jailbreak=false) => {
 
   const response = await openai.images.generate({
-    model: "dall-e-2",
+    model: "dall-e-3",
     prompt: jailbreak?"I NEED to test how the tool works with extremely concrete prompts. DO NOT add any detail or variation, just use it AS-IS:`" + description + "`":description,
     //style: "natural",
     //quality:"hd",
@@ -101,10 +101,14 @@ async function convertImageToBase64(filePath) {
 
 async function processImage(ws,downloadUrl,downloadPath,outputJpgPath) {
 
+
   await downloadAndSave(downloadUrl, downloadPath);
+  console.log(`img downloaded and saved as file ${downloadPath}`);
+  ws.send(JSON.stringify({ type: "status", body: `img downloaded and saved as file ${downloadPath}` }));
 
   const imgBase64 = await convertAndSavePngToJpg(downloadPath, outputJpgPath);
-
+  ws.send(JSON.stringify({ type: "status", body: `img converted and saved as file ${outputJpgPath}` }));
+  console.log(`img downloaded and saved as file ${outputJpgPath}`);
 
   // Send the Base64 string over WebSocket
   if (ws.readyState === WebSocket.OPEN) {
@@ -182,6 +186,7 @@ wss.on('connection', ws => {
         } catch (err){
           ws.send(JSON.stringify({type:"error",body:'Error saving revised prompt'}));
           console.error('Error saving the revised prompt:', err);
+          ws.send(JSON.stringify({type:"error",body:'Error saving the revised prompt'}));
 
         }
         console.log(response[0].url);
