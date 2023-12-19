@@ -127,6 +127,7 @@
     canvas.height = targetHeight;
     const context = canvas.getContext('2d');
     context.drawImage(source, 0, 0, targetWidth, targetHeight);
+    document.getElementById('step2').appendChild(canvas);
 
     return canvas.toDataURL('image/jpeg', quality);
   }

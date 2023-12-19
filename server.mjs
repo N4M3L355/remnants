@@ -137,6 +137,7 @@ wss.on('connection', ws => {
       if (data.type === 'image') {
         const imgBase64 = data.data;
         console.log('Received image data');
+        ws.send(JSON.stringify({type:"status",body:'Received image data'}));
 
         // Remove header from Base64 string
         const base64Data = imgBase64.replace(/^data:image\/jpeg;base64,/, "");
@@ -152,12 +153,13 @@ wss.on('connection', ws => {
           await fs.mkdir(dirPath);
           await fs.writeFile(path.join(dirPath,`incoming_${imagePath}.jpg`), base64Data, 'base64');
           console.log('Image saved successfully');
-          ws.send(JSON.stringify({type:"status",body:'Image received and saved'}));
+          ws.send(JSON.stringify({type:"status",body:'Image saved successfully'}));
         } catch (err) {
           console.error('Error saving the image:', err);
           ws.send(JSON.stringify({type:"error",body:'Error saving image'}));
         }
         console.log("starting image description");
+        ws.send(JSON.stringify({type:"status",body:'starting image description'}));
         let textDescription = await recognize(base64Data);
         ws.send(JSON.stringify({type:"description",body:textDescription}))
         try {
@@ -170,6 +172,7 @@ wss.on('connection', ws => {
         }
         console.log(textDescription);
         console.log("starting image generation");
+        ws.send(JSON.stringify({type:"status",body:'starting image generation'}));
         let response = await imagine(textDescription.response,true)
         console.log(response);
         ws.send(JSON.stringify({type:"description",body:response[0].revised_prompt}))
@@ -182,6 +185,8 @@ wss.on('connection', ws => {
 
         }
         console.log(response[0].url);
+        console.log("got the final url");
+        ws.send(JSON.stringify({type:"status",body:'got the final url'}));
         const downloadUrl = response[0].url; // Replace with your PNG URL
         const downloadPath = path.join(dirPath,`generated_${imagePath}.png`); // Temporary path for downloaded PNG
         const outputJpgPath = path.join(dirPath,`compressed_generated_${imagePath}.jpg`); // Output path for JPG
