@@ -7,61 +7,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;700&family=Merienda:wght@400;700&display=swap"
           rel="stylesheet">
 
-    <script>
-      let ws;
-
-      window.onload = () => {
-        ws = new WebSocket('ws://localhost:8080');
-
-        ws.onopen = () => {
-          console.log('Connected to the server');
-        };
-        ws.onmessage = function (event) {
-          console.log(event);
-          const message = JSON.parse(event.data);
-          const pillDiv = document.createElement('div');
-          pillDiv.className = 'pill';
-
-          if (message.type === "image") {
-            const img = new Image();
-            img.src = message.data;
-            pillDiv.appendChild(img);
-            document.getElementById('step3').appendChild(pillDiv); // Append the image to the body or any other container
-          } else if (message.type === "description") {
-            const textDiv = document.createElement('div');
-            textDiv.textContent = message.body.response;
-            pillDiv.appendChild(textDiv);
-
-            document.getElementById('step2').appendChild(pillDiv);
-            console.log(message)
-          } else if (message.type === "status") {
-            const textDiv = document.createElement('div');
-            textDiv.textContent = message.body;
-            pillDiv.appendChild(textDiv);
-
-            document.getElementById('step2').appendChild(pillDiv);
-            console.log(message)
-          } else {
-            console.log(message)
-          }
-        };
-
-        ws.onclose = () => {
-          console.log('Disconnected from the server');
-        };
-      };
-
-      function sendPing() {
-        if (ws) {
-          ws.send(JSON.stringify({type: "message", data: 'Ping'}));
-        }
-      }
-    </script>
 </head>
 <body>
 <div class="step">
     <h1>Remnants</h1>
-    <button style="display: none" onclick="sendPing()">Send Ping</button>
+
+    <p>Let the AI recreate your picture </p>
+    <!--
+    <button onclick="sendPing()">Send Ping</button>
+    -->
 </div>
 <div id="step1" class="step">
     <p>Use your browser camera:</p>
@@ -184,6 +138,56 @@
 
 </style>
 <script>
+
+
+  let ws;
+
+  window.onload = () => {
+    ws = new WebSocket('ws://localhost:8080');
+
+    ws.onopen = () => {
+      console.log('Connected to the server');
+    };
+    ws.onmessage = function (event) {
+      console.log(event);
+      const message = JSON.parse(event.data);
+      const pillDiv = document.createElement('div');
+      pillDiv.className = 'pill';
+
+      if (message.type === "image") {
+        const img = new Image();
+        img.src = message.data;
+        pillDiv.appendChild(img);
+        document.getElementById('step3').appendChild(pillDiv); // Append the image to the body or any other container
+      } else if (message.type === "description") {
+        const textDiv = document.createElement('div');
+        textDiv.textContent = message.body.response;
+        pillDiv.appendChild(textDiv);
+
+        document.getElementById('step2').appendChild(pillDiv);
+        console.log(message)
+      } else if (message.type === "status") {
+        const textDiv = document.createElement('div');
+        textDiv.textContent = message.body;
+        pillDiv.appendChild(textDiv);
+
+        document.getElementById('step2').appendChild(pillDiv);
+        console.log(message)
+      } else {
+        console.log(message)
+      }
+    };
+
+    ws.onclose = () => {
+      console.log('Disconnected from the server');
+    };
+  };
+
+  function sendPing() {
+    if (ws) {
+      ws.send(JSON.stringify({type: "message", data: 'Ping'}));
+    }
+  }
 
   document.getElementById('fileInput').addEventListener('change', function () {
     const fileName = this.files[0].name;
