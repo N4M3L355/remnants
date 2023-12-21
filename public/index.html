@@ -29,9 +29,9 @@
     <div class="card">
         <p>Or upload a file from your computer:</p>
         <input type="file" id="fileInput" accept="image/*" style="display: none;">
-        <label for="fileInput" id="fileInputLabel" class="btn"
-               style="max-width:20rem;white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Browse...</label>
-        <button id="uploadButton" class="btn">Upload Image</button>
+        <label for="fileInput" id="fileInputLabel" class="btn">Choose a file</label>
+        <button id="uploadButton" disabled class="btn"
+                style="max-width:20rem;white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Upload <span id="imageName"></span></button>
 
 
         <canvas id="canvas" class="hidden"></canvas>
@@ -92,7 +92,6 @@
     }
 
     .btn {
-        display: block;
         border-radius: 10px;
         border: 1px solid #D0B2AE;
         background: rgba(208, 178, 174, 0.27);
@@ -108,6 +107,14 @@
     .btn:hover {
         /* Add hover effects if needed */
         background: rgba(208, 178, 174, 0.4); /* Example hover effect */
+    }
+    .btn:disabled{
+        cursor: not-allowed;
+        color: #585157;
+        background: rgba(88, 81, 87, 0.27);
+        border: 2px solid #585157;
+        box-shadow:none;
+
     }
 
     body {
@@ -191,7 +198,7 @@
 
   document.getElementById('fileInput').addEventListener('change', function () {
     const fileName = this.files[0].name;
-    document.getElementById('fileInputLabel').textContent = fileName;
+    document.getElementById('imageName').textContent = fileName;
   });
 
   const video = document.querySelector('#video')
