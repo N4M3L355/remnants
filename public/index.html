@@ -66,14 +66,14 @@
     <button style="display: none" onclick="sendPing()">Send Ping</button>
 </div>
 <div id="step1" class="step">
-        <p>Use your browser camera:</p>
-        <div id="container" style="position: relative">
-            <video autoplay="true" id="video" style="position:relative"></video>
-            <button id="takepicture" class="btn" style="position:absolute; bottom:0;transform: translateY(-100%)"> Take Picture </button>
-        </div>
+    <p>Use your browser camera:</p>
+    <div id="container" style="position: relative">
+        <video autoplay="true" id="video" style="position:relative"></video>
+        <button id="takepicture" class="btn" style="position:absolute; bottom:0;transform: translateY(-100%)"> Take Picture </button>
+    </div>
 
     <div class="card">
-    <p>Or upload a file from your computer:</p>
+        <p>Or upload a file from your computer:</p>
         <input type="file" id="fileInput" accept="image/*" style="display: none;">
         <label for="fileInput" id="fileInputLabel" class="btn" style="max-width:20rem;white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Browse...</label>
         <button id="uploadButton" class="btn">Upload Image</button>
@@ -234,10 +234,10 @@
     } else {
       console.error("WebSocket is not open.");
     }
-/*
-    // Your existing code to handle the download button
-    document.querySelector('#dl-btn').href = imgBase64;
-    document.querySelector('#dl-btn').click();*/
+    /*
+        // Your existing code to handle the download button
+        document.querySelector('#dl-btn').href = imgBase64;
+        document.querySelector('#dl-btn').click();*/
 
   })
   document.getElementById('uploadButton').addEventListener('click', async () => {
@@ -270,6 +270,9 @@
 
     reader.readAsDataURL(file);
   });
-
+  let currentStep = 1;
+  let changeStepVisibility = (step, value) => {
+    document.getElementById(`step${step}`).style.display= value?"block":"none";
+  }
 </script>
 </html>
